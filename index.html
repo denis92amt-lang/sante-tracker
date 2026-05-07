@@ -312,20 +312,11 @@
       <div class="card">
         <div class="card-title">Google Sheets (synchro auto)</div>
         <div class="settings-group">
-          <label class="settings-label">Clé API Google</label>
-          <input type="text" id="s-gkey" placeholder="AIzaSy..." oninput="saveSettings()">
-        </div>
-        <div class="settings-group">
-          <label class="settings-label">ID du Spreadsheet</label>
-          <div class="settings-sub">L'ID dans l'URL : /spreadsheets/d/<strong>ID</strong>/edit</div>
-          <input type="text" id="s-sheetid" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgm..." oninput="saveSettings()">
+          <label class="settings-label">URL Apps Script</label>
+          <div class="settings-sub">Depuis Extensions → Apps Script → Déployer</div>
+          <input type="text" id="s-gkey" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSettings()">
         </div>
         <button class="btn" onclick="testSheets()">🔌 Tester la connexion</button>
-        <div class="settings-sub" style="margin-top:8px;">
-          1. <a href="https://console.cloud.google.com/" class="help-link" target="_blank">Google Cloud Console</a> → Activer Sheets API<br>
-          2. Identifiants → Créer clé API<br>
-          3. Partager le sheet "Tout le monde avec le lien (éditeur)"
-        </div>
       </div>
       <div class="card">
         <button class="btn" onclick="exportCSV()" style="margin-bottom:8px;">📤 Exporter en CSV</button>
@@ -381,8 +372,7 @@ function setTransitType(t) {
 function saveSettings() {
   settings = {
     anthropicKey: document.getElementById('s-anthropic').value.trim(),
-    gKey: document.getElementById('s-gkey').value.trim(),
-    sheetId: document.getElementById('s-sheetid').value.trim()
+    gKey: document.getElementById('s-gkey').value.trim()
   };
   localStorage.setItem('sh_settings', JSON.stringify(settings));
 }
@@ -390,7 +380,6 @@ function saveSettings() {
 function loadSettings() {
   document.getElementById('s-anthropic').value = settings.anthropicKey || '';
   document.getElementById('s-gkey').value = settings.gKey || '';
-  document.getElementById('s-sheetid').value = settings.sheetId || '';
 }
 
 // ─── PROGRESS ─────────────────────────────────────────────────────────────────
@@ -674,7 +663,7 @@ async function saveEntry(which) {
   localStorage.setItem('sh_entries', JSON.stringify(entries));
   updateStats();
 
-  if (settings.gKey && settings.sheetId) {
+  if (settings.gKey) {
     try {
       await syncToSheets(entry);
       document.getElementById('sync-status').textContent = 'Synchronisé ✓';
@@ -703,23 +692,30 @@ async function syncToSheets(entry) {
   } else {
     row = [ts, 'Urines', '', '', '', '', '', '', '', '', d.couleur||'', d.hydratation||''];
   }
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${settings.sheetId}/values/A1:append?valueInputOption=RAW&key=${settings.gKey}`;
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [row] }) });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  const res = await fetch(settings.gKey, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ row })
+  });
+  const text = await res.text();
+  if (text !== 'OK') throw new Error(text);
 }
 
 async function testSheets() {
   saveSettings();
-  if (!settings.gKey || !settings.sheetId) { alert('Renseignez la clé API et l\'ID du spreadsheet.'); return; }
+  if (!settings.gKey) { alert('Collez votre URL Apps Script.'); return; }
   try {
-    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${settings.sheetId}?key=${settings.gKey}`);
-    const data = await res.json();
-    if (data.spreadsheetId) {
+    const res = await fetch(settings.gKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ row: ['TEST', 'Connexion OK', '', '', '', '', '', '', '', '', '', ''] })
+    });
+    const text = await res.text();
+    if (text === 'OK') {
       document.getElementById('sync-status').textContent = 'Connecté ✓';
       document.getElementById('sync-status').classList.add('ok');
-      alert('✅ Connexion réussie : ' + data.properties.title);
-    } else throw new Error(data.error?.message || 'Erreur inconnue');
+      alert('✅ Connexion réussie ! Une ligne de test a été ajoutée dans votre Sheet.');
+    } else throw new Error(text);
   } catch(e) { alert('❌ Connexion échouée : ' + e.message); }
 }
 
@@ -840,7 +836,7 @@ if (sessionStorage.getItem('sh_unlocked') === '1') {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 updateStats();
-if (settings.gKey && settings.sheetId) {
+if (settings.gKey) {
   document.getElementById('sync-status').textContent = 'Sheets connecté';
   document.getElementById('sync-status').classList.add('ok');
 }

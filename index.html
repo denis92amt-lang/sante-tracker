@@ -477,8 +477,31 @@ async function saveEntry(w){
   entry.note=document.getElementById(w==='food'?'fnote':'tnote').value;
   entries.push(entry);localStorage.setItem('sh_entries',JSON.stringify(entries));
   updateStats();updateHeader();alert('✅ Enregistré !');
-  if(w==='food'){pendFood=null;document.getElementById('fnote').value='';}
-  else{pendTransit=null;document.getElementById('tnote').value='';}
+  if(w==='food'){
+    pendFood=null;
+    document.getElementById('fnote').value='';
+    document.getElementById('fp').style.display='none';
+    document.getElementById('fp').src='';
+    document.getElementById('fr').style.display='none';
+    document.getElementById('ferr').style.display='none';
+    document.getElementById('ff').value='';
+  } else {
+    pendTransit=null;
+    document.getElementById('tnote').value='';
+    document.getElementById('tp').style.display='none';
+    document.getElementById('tp').src='';
+    document.getElementById('tr').style.display='none';
+    document.getElementById('tf').value='';
+  }
+}
+
+function deleteEntry(ts){
+  if(!confirm('Supprimer cette entrée ?')) return;
+  const idx=entries.findIndex(e=>e.timestamp===ts);
+  if(idx===-1) return;
+  entries.splice(idx,1);
+  localStorage.setItem('sh_entries',JSON.stringify(entries));
+  updateStats();updateHeader();renderHistory();
 }
 
 function updateStats(){
@@ -491,7 +514,7 @@ function updateStats(){
 function renderHistory(){
   updateStats();const c=document.getElementById('hc');
   if(!entries.length){c.innerHTML='<div class="es">Aucune entrée.<br>Photographiez votre premier repas !</div>';return;}
-  c.innerHTML=[...entries].reverse().slice(0,50).map(e=>{
+  c.innerHTML=[...entries].reverse().slice(0,50).map((e,i)=>{
     const d=e.data,isF=e.type==='food',isSt=e.type==='stool';
     const th=e.thumb?`<img class="hthumb" src="${e.thumb}" alt="">`:`<div class="hph ${e.type==='food'?'ifo':e.type==='stool'?'ist':'iur'}">${e.type==='food'?'🥗':e.type==='stool'?'💩':'💧'}</div>`;
     const name=isF?(d.nom||'Repas'):isSt?`Selles · Bristol ${d.bristol||'?'}`:`Urines · ${d.hydratation||'?'}`;
@@ -499,7 +522,7 @@ function renderHistory(){
     const ts=new Date(e.timestamp).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     const nb=e.note?`<div class="hnote">📝 ${e.note}</div>`:'';
     const mb=e.manual?'<span style="font-size:9px;background:var(--purple-bg);color:var(--purple-text);padding:1px 5px;border-radius:7px;margin-left:3px;">manuel</span>':'';
-    return`<div class="hi">${th}<div style="flex:1;min-width:0;"><div class="hn">${name}${mb}</div><div class="hs">${sub}</div>${nb}</div><div class="ht">${ts}</div></div>`;
+    return`<div class="hi">${th}<div style="flex:1;min-width:0;"><div class="hn">${name}${mb}</div><div class="hs">${sub}</div>${nb}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;"><div class="ht">${ts}</div><button onclick="deleteEntry('${e.timestamp}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text3);padding:0 2px;" title="Supprimer">🗑</button></div></div>`;
   }).join('');
 }
 

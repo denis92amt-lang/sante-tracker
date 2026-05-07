@@ -121,7 +121,7 @@ input[type=text]:focus,input[type=password]:focus,input[type=number]:focus,texta
       <div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:5px;">Suivi Santé IA</div>
       <div style="font-size:12px;color:var(--text2);">Entrez votre mot de passe</div>
     </div>
-    <input type="password" id="pw-input" placeholder="Mot de passe"
+    <input type="password" id="pw-input" placeholder="Mot de passe" autocomplete="off"
       style="width:100%;padding:12px;border:0.5px solid var(--border2);border-radius:11px;background:var(--bg);color:var(--text);font-size:16px;outline:none;margin-bottom:9px;-webkit-appearance:none;text-align:center;letter-spacing:0.1em;"
       onkeydown="if(event.key==='Enter')checkPassword()">
     <button onclick="checkPassword()" style="width:100%;padding:12px;border:none;border-radius:11px;background:#185FA5;color:white;font-size:14px;font-weight:500;cursor:pointer;">Déverrouiller</button>
@@ -472,6 +472,21 @@ function renderTransit(d,isU){
 }
 function setTT(t){curTT=t;document.getElementById('bst').classList.toggle('active',t==='stool');document.getElementById('bur').classList.toggle('active',t==='urine');document.getElementById('tr').style.display='none';document.getElementById('tp').style.display='none';}
 
+function resetFoodSection(){
+  // Cache photo et résultats
+  const fp=document.getElementById('fp');
+  fp.src=''; fp.style.display='none';
+  document.getElementById('fr').style.display='none';
+  document.getElementById('ferr').style.display='none';
+  document.getElementById('fnote').value='';
+  // Clone l'input file pour forcer reset sur Android
+  const old=document.getElementById('ff');
+  const neo=old.cloneNode(false);
+  neo.id='ff'; neo.type='file'; neo.accept='image/*'; neo.setAttribute('capture','environment');
+  old.parentNode.replaceChild(neo,old);
+  neo.addEventListener('change', foodChangeHandler);
+}
+
 // SAVE
 async function saveEntry(w){
   const entry=w==='food'?pendFood:pendTransit;if(!entry)return;
@@ -481,16 +496,8 @@ async function saveEntry(w){
   if(w==='food'){
     pendFood=null;
     document.getElementById('fnote').value='';
-    document.getElementById('fp').style.display='none';
-    document.getElementById('fp').src='';
-    document.getElementById('fr').style.display='none';
     document.getElementById('ferr').style.display='none';
-    // Reset input file Android
-    const ff=document.getElementById('ff');
-    ff.removeEventListener('change',ff._handler);
-    const newFf=ff.cloneNode(true);
-    ff.parentNode.replaceChild(newFf,ff);
-    newFf.addEventListener('change',foodChangeHandler);
+    resetFoodSection();
     showToast('✅ Repas enregistré !');
   } else {
     pendTransit=null;

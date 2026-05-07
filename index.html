@@ -368,7 +368,7 @@ function changePw(){const np=document.getElementById('snp').value.trim();if(!np)
 function startPg(id){let w=0;const el=document.getElementById(id);el.style.width='0%';return setInterval(()=>{w=Math.min(w+2,90);el.style.width=w+'%';},80);}
 
 // FOOD
-document.getElementById('ff').addEventListener('change',async function(e){
+async function foodChangeHandler(e){
   const file=e.target.files[0];if(!file)return;
   const key=settings.anthropicKey;if(!key){alert('Ajoutez votre clé API OpenAI dans les Réglages.');showSection('settings');return;}
   const reader=new FileReader();
@@ -387,7 +387,8 @@ document.getElementById('ff').addEventListener('change',async function(e){
     }catch(err){clearInterval(iv);const el=document.getElementById('ferr');el.textContent='⚠️ '+err.message;el.style.display='flex';}
     document.getElementById('fpg').style.display='none';
   };reader.readAsDataURL(file);
-});
+}
+document.getElementById('ff').addEventListener('change', foodChangeHandler);
 
 function renderFood(d){
   document.getElementById('frn').textContent=d.nom||'Repas analysé';
@@ -484,7 +485,12 @@ async function saveEntry(w){
     document.getElementById('fp').src='';
     document.getElementById('fr').style.display='none';
     document.getElementById('ferr').style.display='none';
-    document.getElementById('ff').value='';
+    // Reset input file Android
+    const ff=document.getElementById('ff');
+    ff.removeEventListener('change',ff._handler);
+    const newFf=ff.cloneNode(true);
+    ff.parentNode.replaceChild(newFf,ff);
+    newFf.addEventListener('change',foodChangeHandler);
     showToast('✅ Repas enregistré !');
   } else {
     pendTransit=null;

@@ -476,7 +476,7 @@ async function saveEntry(w){
   const entry=w==='food'?pendFood:pendTransit;if(!entry)return;
   entry.note=document.getElementById(w==='food'?'fnote':'tnote').value;
   entries.push(entry);localStorage.setItem('sh_entries',JSON.stringify(entries));
-  updateStats();updateHeader();alert('✅ Enregistré !');
+  updateStats();updateHeader();
   if(w==='food'){
     pendFood=null;
     document.getElementById('fnote').value='';
@@ -485,6 +485,7 @@ async function saveEntry(w){
     document.getElementById('fr').style.display='none';
     document.getElementById('ferr').style.display='none';
     document.getElementById('ff').value='';
+    showToast('✅ Repas enregistré !');
   } else {
     pendTransit=null;
     document.getElementById('tnote').value='';
@@ -492,7 +493,15 @@ async function saveEntry(w){
     document.getElementById('tp').src='';
     document.getElementById('tr').style.display='none';
     document.getElementById('tf').value='';
+    showToast('✅ Enregistré !');
   }
+}
+
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.2s;white-space:nowrap;';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity='0';},2000);
 }
 
 function deleteEntry(ts){
